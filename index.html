@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>สำหรับเธอ 🤍</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glass-bg: rgba(30, 25, 50, 0.7);
+            --glass-border: rgba(255, 200, 220, 0.3);
+            --primary-glow: #ffb7b2;
+            --cute-pink: #ff8fab;
+            --deep-purple: #2b1055;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background: linear-gradient(to bottom, #1a1a2e, #2b1055, #1a1a2e);
+            overflow: hidden; font-family: 'Prompt', sans-serif;
+            width: 100vw; height: 100dvh; touch-action: none; position: fixed; color: #fff;
+        }
+
+        #deco-layer { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 0; pointer-events: none; overflow: hidden; }
+        .floating-heart { position: absolute; bottom: -50px; font-size: 20px; opacity: 0.7; animation: floatUp linear infinite; }
+        @keyframes floatUp { to { transform: translateY(-110vh) rotate(360deg); } }
+
+        canvas {
+            display: block; position: absolute; top: 0; left: 0; 
+            z-index: 1; width: 100%; height: 100%;
+            filter: saturate(1.3) brightness(1.1);
+        }
+
+        /* --- UI Elements --- */
+        #start-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(20, 10, 40, 0.9); backdrop-filter: blur(10px);
+            z-index: 999; display: flex; justify-content: center; align-items: center; 
+            flex-direction: column; cursor: pointer; transition: opacity 0.8s ease;
+        }
+        
+        .start-btn {
+            padding: 18px 45px; border: 2px solid var(--glass-border); border-radius: 50px;
+            background: rgba(255, 255, 255, 0.15); color: white; 
+            font-family: 'Prompt', sans-serif; font-size: 1.3rem; font-weight: 500;
+            box-shadow: 0 0 25px rgba(255, 143, 171, 0.4); animation: pulseBtn 2s infinite;
+        }
+        @keyframes pulseBtn { 0% { transform: scale(1); } 50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(255, 143, 171, 0.6); } 100% { transform: scale(1); } }
+
+        #name-container {
+            position: absolute; top: 12%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            z-index: 10; opacity: 0; pointer-events: none;
+            transition: all 1.2s ease-out; width: 100%; text-align: center;
+        }
+        #name-container.visible { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+        .glowing-text {
+            font-family: 'Pacifico', cursive; font-size: 3.2rem; color: #fff; font-weight: 400;
+            text-shadow: 0 0 10px #fff, 0 0 25px #ff69b4, 0 0 50px #bd00ff;
+            white-space: nowrap; margin: 0; letter-spacing: 1px;
+        }
+
+        /* --- Love Timer (ตัวนับเวลา) --- */
+        #love-timer {
+            font-size: 0.9rem; margin-top: 10px; color: #ffd1dc;
+            font-weight: 300; letter-spacing: 0.5px;
+            text-shadow: 0 0 10px rgba(255, 105, 180, 0.5);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 15px; border-radius: 20px;
+            display: inline-block; border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* --- Puzzle --- */
+        #puzzle-wrapper {
+            position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 30; opacity: 0; pointer-events: none; transition: opacity 0.8s;
+            display: flex; flex-direction: column; align-items: center;
+            width: 90%; max-width: 320px;
+            background: var(--glass-bg); padding: 20px; border-radius: 30px;
+            border: 2px solid var(--glass-border); box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            backdrop-filter: blur(15px);
+        }
+        #puzzle-wrapper.active { opacity: 1; pointer-events: auto; }
+
+        .puzzle-title { color: #eee; margin-bottom: 15px; font-size: 1rem; text-align: center; }
+        #puzzle-board {
+            display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+            gap: 4px; width: 240px; height: 300px; background: rgba(255,255,255,0.1);
+            border-radius: 15px; padding: 4px; border: 1px solid var(--glass-border);
+        }
+        .puzzle-piece {
+            background-image: url('photo1.jpg'); background-size: 240px 300px;
+            cursor: pointer; border-radius: 8px; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .puzzle-piece.selected {
+            z-index: 10; transform: scale(0.92); box-shadow: 0 0 0 3px #fff, 0 0 20px var(--cute-pink); border: 2px solid white;
+        }
+
+        #success-msg-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 40; pointer-events: none; opacity: 0;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); transition: opacity 0.5s;
+        }
+        .success-card {
+            background: rgba(255, 255, 255, 0.15); color: white; border: 2px solid var(--glass-border);
+            padding: 25px 50px; border-radius: 60px; font-size: 1.8rem; font-weight: 500;
+            box-shadow: 0 0 40px rgba(255, 143, 171, 0.5); transform: scale(0.8); transition: transform 0.4s;
+        }
+        #success-msg-overlay.show { opacity: 1; } #success-msg-overlay.show .success-card { transform: scale(1); }
+
+        /* --- Content Box --- */
+        #content-box {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: auto; min-height: 70%;
+            z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+            padding-top: 30px; padding-bottom: 30px; opacity: 0; pointer-events: none;
+            transform: translateY(50px); transition: all 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+            background: linear-gradient(to top, rgba(20, 10, 40, 0.98), rgba(40, 20, 70, 0.8));
+            backdrop-filter: blur(20px); border-top-left-radius: 40px; border-top-right-radius: 40px;
+            border-top: 2px solid var(--glass-border); box-shadow: 0 -15px 40px rgba(0,0,0,0.3);
+        }
+        #content-box.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+        .title-msg { font-size: 1.5rem; color: #fff; font-weight: 500; margin-bottom: 15px; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        .body-msg { font-size: 0.95rem; color: #e0e0e0; font-weight: 300; text-align: center; line-height: 1.7; margin-bottom: 20px; padding: 0 25px; width: 100%; box-sizing: border-box; }
+        
+        .photo-frame {
+            position: relative; padding: 8px 8px 30px 8px; background: #fff; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 140px; height: 180px;
+            transform: rotate(-3deg); cursor: pointer; transition: transform 0.3s; flex-shrink: 0;
+            margin-bottom: 15px; border-radius: 4px;
+        }
+        .photo-frame:active { transform: rotate(-3deg) scale(0.95); }
+        .couple-photo { width: 100%; height: 100%; object-fit: cover; background: #eee; border-radius: 2px;}
+        .click-hint { font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-top: 5px; font-weight: 300;}
+
+        /* --- ปุ่มสุ่มกำลังใจ --- */
+        .love-note-btn {
+            margin-top: 15px; padding: 10px 25px;
+            background: linear-gradient(45deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            border: none; border-radius: 30px; color: #fff; font-size: 1rem; font-weight: 500; font-family: 'Prompt', sans-serif;
+            cursor: pointer; box-shadow: 0 5px 15px rgba(255, 105, 180, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s; text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .love-note-btn:active { transform: scale(0.95); }
+        
+        /* Popup กล่องสุ่ม */
+        #note-popup {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8);
+            background: white; color: #444; padding: 25px 30px; border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 100; opacity: 0; pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: center; width: 80%; max-width: 280px;
+        }
+        #note-popup.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+        .note-text { font-size: 1.1rem; line-height: 1.5; margin-bottom: 15px; color: #d63384; font-weight: 500; }
+        .close-note { font-size: 0.9rem; color: #888; text-decoration: underline; cursor: pointer; }
+
+    </style>
+</head>
+<body>
+    <audio id="bg-music" loop><source src="song.mp3" type="audio/mpeg"></audio>
+
+    <div id="deco-layer"></div>
+    
+    <div id="start-screen" onclick="startShow()">
+        <div class="start-btn">แตะเพื่อเปิดของขวัญ 🎁💖</div>
+        <p style="font-size:0.9rem; margin-top: 20px; opacity: 0.7; font-weight: 300;">(ช่วยเปิดเสียงด้วยนะครับ 🎵)</p>
+    </div>
+
+    <div id="flash-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:white;z-index:50;opacity:0;pointer-events:none;transition:opacity 0.8s;"></div>
+    <canvas id="canvas"></canvas>
+    
+    <div id="name-container">
+        <h1 class="glowing-text">Manao 💗 Ome</h1>
+        <div id="love-timer">เรารักกันมา: กำลังคำนวณ...</div>
+    </div>
+
+    <div id="puzzle-wrapper">
+        <div class="puzzle-title">ช่วยต่อจิ๊กซอว์รูปเราให้ครบหน่อยนะ... 🧩💕</div>
+        <div id="puzzle-board"></div>
+    </div>
+
+    <div id="success-msg-overlay">
+        <div class="success-card">เก่งมากเลยที่รัก! 🥰👏</div>
+    </div>
+
+    <div id="content-box">
+        <div class="title-msg">สวัสดีปีใหม่นะคนดี 🤍✨</div>
+        <div class="body-msg">
+            ขอบคุณปีที่ผ่านมาที่มีเธออยู่ข้างๆ กันเสมอ<br>
+            ไม่ว่าจะเป็นวันที่ดีหรือวันที่เหนื่อย<br>
+            แค่หันมาเห็นเธอ พี่ก็รู้สึกว่าไม่ต้องสู้คนเดียวเลย<br>
+            ขอให้ปีใหม่นี้เป็นอีกปีที่เราจับมือกันแน่นๆ<br>
+            ยิ้มให้กันเยอะๆ และรักกันมากขึ้นทุกวันนะ<br>
+            <span style="font-size: 1.2rem; font-weight: 500; color: #ff8fab; display:block; margin-top:10px;">รักเธอนะ ❤️🥰</span>
+        </div>
+        
+        <div class="photo-frame" onclick="nextPhoto()">
+            <img src="photo1.jpg" id="slideshow-img" class="couple-photo">
+        </div>
+        <div class="click-hint">แตะที่รูปเพื่อดูรูปอื่นๆ 📸</div>
+
+        <button class="love-note-btn" onclick="showRandomNote()">💌 กดเมื่อคิดถึง</button>
+    </div>
+
+    <div id="note-popup">
+        <div class="note-text" id="note-content">...</div>
+        <div class="close-note" onclick="closeNote()">ปิด</div>
+    </div>
+
+    <script>
+        // --- 1. ตั้งค่าวันครบรอบ (แก้ไขให้แล้ว: 9 ธ.ค. 2019) ---
+        const startDate = new Date("2019-12-09T00:00:00"); 
+
+        function updateTimer() {
+            const now = new Date();
+            const diff = now - startDate;
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const minutes = Math.floor((diff / 1000 / 60) % 60);
+            const seconds = Math.floor((diff / 1000) % 60);
+
+            document.getElementById('love-timer').innerHTML = 
+                `เรารักกันมา ${days} วัน ${hours} ชม. ${minutes} นาทีแล้วนะ ❤️`;
+        }
+        setInterval(updateTimer, 1000);
+        updateTimer();
+
+        // --- 2. ระบบสุ่มข้อความกำลังใจ ---
+        const loveNotes = [
+            "เหนื่อยไหมคนเก่ง พักหน่อยนะ 🍵",
+            "ยิ้มเข้าไว้ โลกสดใสเพราะเธอนะ 😊",
+            "รักเธอที่สุดในโลกเลยรู้เปล่า 🌍❤️",
+            "สู้ๆ นะ เป็นกำลังใจให้เสมอ ✌️",
+            "อยากกอดจังเลย รีบมาเจอกันนะ 🫂",
+            "ขอบคุณที่มีเธออยู่ตรงนี้นะ 💖",
+            "วันนี้เธอเก่งมากแล้วนะ 👍",
+            "อย่าลืมดูแลตัวเองด้วยนะ เป็นห่วง 🥗"
+        ];
+
+        function showRandomNote() {
+            const popup = document.getElementById('note-popup');
+            const content = document.getElementById('note-content');
+            const randomMsg = loveNotes[Math.floor(Math.random() * loveNotes.length)];
+            content.innerText = randomMsg;
+            popup.classList.add('show');
+            setTimeout(() => { popup.classList.remove('show'); }, 3500);
+        }
+
+        function closeNote() {
+            document.getElementById('note-popup').classList.remove('show');
+        }
+
+        // --- Decor Elements ---
+        const decoLayer = document.getElementById('deco-layer');
+        const hearts = ['💖', '💕', '✨', '💗', '🥰'];
+        setInterval(() => {
+            const heart = document.createElement('div');
+            heart.className = 'floating-heart';
+            heart.innerText = hearts[Math.floor(Math.random() * hearts.length)];
+            heart.style.left = Math.random() * 100 + '%';
+            heart.style.animationDuration = (Math.random() * 10 + 10) + 's';
+            heart.style.fontSize = (Math.random() * 15 + 10) + 'px';
+            decoLayer.appendChild(heart);
+            setTimeout(() => heart.remove(), 20000);
+        }, 1500);
+
+        // --- Puzzle System ---
+        const puzzleBoard = document.getElementById('puzzle-board');
+        let pieces = []; let selectedPiece = null; const rows = 3, cols = 3; 
+        function initPuzzle() {
+            for (let i = 0; i < rows * cols; i++) {
+                const piece = document.createElement('div'); piece.className = 'puzzle-piece';
+                const row = Math.floor(i / cols); const col = i % cols;
+                piece.style.backgroundPosition = `-${col * (240/3)}px -${row * (300/3)}px`;
+                piece.dataset.index = i; piece.onclick = () => onPieceClick(piece); pieces.push(piece);
+            }
+            shuffle(pieces); pieces.forEach(p => puzzleBoard.appendChild(p));
+        }
+        function shuffle(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } }
+        function onPieceClick(clickedPiece) {
+            if (selectedPiece === clickedPiece) { clickedPiece.classList.remove('selected'); selectedPiece = null; return; }
+            if (selectedPiece) {
+                const nextSibling1 = selectedPiece.nextSibling === clickedPiece ? selectedPiece : selectedPiece.nextSibling;
+                puzzleBoard.insertBefore(selectedPiece, clickedPiece); puzzleBoard.insertBefore(clickedPiece, nextSibling1);
+                selectedPiece.classList.remove('selected'); selectedPiece = null; checkWin();
+            } else { clickedPiece.classList.add('selected'); selectedPiece = clickedPiece; }
+        }
+        function checkWin() {
+            const currentPieces = document.querySelectorAll('.puzzle-piece'); let isWin = true;
+            currentPieces.forEach((piece, index) => { if (parseInt(piece.dataset.index) !== index) isWin = false; });
+            if (isWin) {
+                setTimeout(() => {
+                    document.getElementById('puzzle-wrapper').style.opacity = 0;
+                    setTimeout(() => document.getElementById('puzzle-wrapper').style.display = 'none', 800);
+                    const successOverlay = document.getElementById('success-msg-overlay'); successOverlay.classList.add('show');
+                    setTimeout(() => {
+                        successOverlay.style.opacity = 0;
+                        setTimeout(() => { successOverlay.style.display = 'none'; document.getElementById('content-box').classList.add('visible'); }, 500);
+                    }, 1500);
+                }, 500);
+            }
+        }
+
+        // --- Photo System ---
+        const photoList = ['photo1.jpg', 'photo2.jpg', 'photo3.jpg'];
+        let currentPhotoIndex = 0; const imgElement = document.getElementById('slideshow-img'); let isChanging = false;
+        function nextPhoto() {
+            if (isChanging) return; isChanging = true; imgElement.classList.add('photo-fade-out');
+            setTimeout(() => { currentPhotoIndex = (currentPhotoIndex + 1) % photoList.length; imgElement.src = photoList[currentPhotoIndex]; imgElement.onload = () => { imgElement.classList.remove('photo-fade-out'); isChanging = false; }; }, 500);
+        }
+
+        // --- Fireworks System ---
+        const canvas = document.getElementById("canvas"); const ctx = canvas.getContext("2d"); let cw, ch;
+        function resizeCanvas() { const dpr = window.devicePixelRatio || 1; cw = window.innerWidth; ch = window.innerHeight; canvas.width = cw * dpr; canvas.height = ch * dpr; canvas.style.width = cw + 'px'; canvas.style.height = ch + 'px'; ctx.scale(dpr, dpr); }
+        window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+        let fireworks = []; let particles = []; let mode = 0; let timer = 0;
+        const pastelColors = [{h: 340, s: 90, l: 75}, {h: 200, s: 90, l: 75}, {h: 45,  s: 90, l: 70}, {h: 160, s: 90, l: 75}, {h: 260, s: 90, l: 75}];
+
+        class Firework {
+            constructor(sx, sy, tx, ty, special) {
+                this.x = sx; this.y = sy; this.sx = sx; this.sy = sy; this.tx = tx; this.ty = ty;
+                this.dist = Math.hypot(tx - sx, ty - sy); this.travel = 0; this.coords = [[sx, sy], [sx, sy]];
+                this.angle = Math.atan2(ty - sy, tx - sx); this.speed = special ? 2.5 : 1.8; this.acc = 1.02;
+                const color = pastelColors[Math.floor(Math.random() * pastelColors.length)];
+                this.hue = color.h; this.sat = color.s; this.light = color.l; this.special = special;
+            }
+            update(i) {
+                this.coords.pop(); this.coords.unshift([this.x, this.y]); this.speed *= this.acc;
+                const vx = Math.cos(this.angle) * this.speed; const vy = Math.sin(this.angle) * this.speed;
+                this.travel = Math.hypot(this.sx - (this.x+vx), this.sy - (this.y+vy));
+                if (this.travel >= this.dist) { createParticles(this.tx, this.ty, this.special, this.hue, this.sat, this.light); fireworks.splice(i, 1); if(this.special) triggerFinale(); } else { this.x += vx; this.y += vy; }
+            }
+            draw() {
+                ctx.beginPath(); ctx.moveTo(this.coords[this.coords.length-1][0], this.coords[this.coords.length-1][1]); ctx.lineTo(this.x, this.y);
+                ctx.strokeStyle = `hsl(${this.hue}, ${this.sat}%, ${this.light}%)`; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
+            }
+        }
+
+        class Particle {
+            constructor(x, y, special, hue, sat, light) {
+                this.x = x; this.y = y; this.coords = []; let cCount = special ? 6 : 4; while(cCount--) this.coords.push([x, y]);
+                this.angle = Math.random() * Math.PI * 2; this.speed = Math.random() * (special ? 15 : 10) + 1; 
+                this.friction = 0.95; this.gravity = 0.5; 
+                this.hue = hue + (Math.random() * 20 - 10); this.sat = sat; this.light = light;
+                this.alpha = 1; this.decay = Math.random() * 0.008 + 0.005; this.thickness = Math.random() * 2.5 + 1.5; 
+                this.sparkle = Math.random() < 0.3; 
+            }
+            update(i) {
+                this.coords.pop(); this.coords.unshift([this.x, this.y]); this.speed *= this.friction;
+                this.x += Math.cos(this.angle) * this.speed; this.y += Math.sin(this.angle) * this.speed + this.gravity;
+                this.alpha -= this.decay; if(this.alpha <= this.decay) particles.splice(i, 1);
+            }
+            draw() {
+                let light = this.light; if (this.sparkle) light += (Math.random() * 20 - 10);
+                ctx.beginPath(); ctx.moveTo(this.coords[this.coords.length-1][0], this.coords[this.coords.length-1][1]); ctx.lineTo(this.x, this.y);
+                ctx.strokeStyle = `hsla(${this.hue}, ${this.sat}%, ${light}%, ${this.alpha})`;
+                ctx.lineWidth = this.thickness; ctx.lineCap = 'round'; ctx.stroke();
+            }
+        }
+
+        function createParticles(x, y, special, hue, sat, light) {
+            let count = special ? 200 : 70; while(count--) particles.push(new Particle(x, y, special, hue, sat, light));
+        }
+
+        function loop() {
+            requestAnimationFrame(loop);
+            ctx.globalCompositeOperation = 'destination-out'; ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; ctx.fillRect(0, 0, cw, ch);
+            ctx.globalCompositeOperation = 'lighter';
+            let i = fireworks.length; while(i--) { fireworks[i].draw(); fireworks[i].update(i); }
+            let j = particles.length; while(j--) { particles[j].draw(); particles[j].update(j); }
+            timer++;
+            if(mode === 1) { if(timer % 40 === 0) fireworks.push(new Firework(cw/2 + (Math.random()-0.5)*cw*0.6, ch, Math.random()*cw, ch*0.25 + Math.random()*ch*0.2)); } 
+            else if(mode === 3) { if(timer % 60 === 0) fireworks.push(new Firework(Math.random()*cw, ch, Math.random()*cw, ch*0.2 + Math.random()*ch*0.2)); }
+        }
+
+        function startShow() {
+            const ss = document.getElementById('start-screen'); ss.style.opacity = 0; setTimeout(()=> ss.style.display = 'none', 800);
+            document.getElementById('bg-music').play().catch(()=>{}); mode = 1; loop();
+            setTimeout(() => { mode = 2; setTimeout(() => { fireworks.push(new Firework(cw/2, ch, cw/2, ch*0.3, true)); }, 1500); }, 6000);
+        }
+
+        function triggerFinale() {
+            const flash = document.getElementById('flash-overlay'); flash.style.opacity = 0.5; setTimeout(()=> flash.style.opacity = 0, 1000);
+            setTimeout(() => { document.getElementById('name-container').classList.add('visible'); mode = 3; }, 500);
+            setTimeout(() => { initPuzzle(); document.getElementById('puzzle-wrapper').classList.add('active'); }, 3000);
+        }
+    </script>
+</body>
+</html>
